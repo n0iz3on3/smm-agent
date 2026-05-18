@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}SMM Agent — Хуки{% endblock %}
+{% block content %}
+<div class="fade-in">
+    <h2 class="text-2xl font-bold text-white mb-6">🪝 Генерация хуков</h2>
+
+    <form id="hooksForm" class="space-y-5">
+        <div>
+            <label class="block text-sm font-medium text-gray-400 mb-1.5">Тема</label>
+            <input name="topic" type="text" required
+                class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-600"
+                placeholder="Для чего нужен хук...">
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1.5">Платформа</label>
+                <select name="platform" class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white">
+                    <option value="telegram">Telegram</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="threads">Threads</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1.5">Количество</label>
+                <input name="count" type="number" value="5" min="1" max="20"
+                    class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1.5">Паттерны</label>
+                <input name="patterns" type="text"
+                    class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-600"
+                    placeholder="contrarian,question,story">
+            </div>
+        </div>
+
+        <button type="submit" class="px-6 py-2.5 bg-accent hover:bg-accent-dark text-white font-medium rounded-lg transition-colors">
+            Сгенерировать хуки
+        </button>
+    </form>
+
+    <div id="result" class="mt-6 hidden">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-lg font-semibold text-white">Хуки</h3>
+            <button onclick="copyResult()" class="text-sm text-gray-400 hover:text-white transition-colors">📋 Копировать</button>
+        </div>
+        <div id="resultText" class="result-card p-5 bg-dark-700 rounded-xl border border-gray-700 text-gray-200 leading-relaxed"></div>
+    </div>
+    <div id="loading" class="mt-6 hidden flex items-center gap-3 text-gray-400">
+        <div class="loader"></div><span>Генерирую хуки...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('hooksForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = new FormData(e.target);
+    showLoading(true);
+    try {
+        const resp = await fetch('/api/hooks', { method: 'POST', body: data });
+        const json = await resp.json();
+        document.getElementById('resultText').textContent = json.result;
+        document.getElementById('result').classList.remove('hidden');
+    } catch (err) {
+        document.getElementById('resultText').textContent = 'Ошибка: ' + err.message;
+        document.getElementById('result').classList.remove('hidden');
+    }
+    showLoading(false);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}SMM Agent — Настройки{% endblock %}
+{% block content %}
+<div class="fade-in">
+    <h2 class="text-2xl font-bold text-white mb-6">⚙️ Настройки</h2>
+
+    <div class="space-y-8">
+        <!-- Social Media Context -->
+        <div>
+            <h3 class="text-lg font-semibold text-white mb-3">Контекст (голос, тон, контент-пиллары)</h3>
+            <p class="text-sm text-gray-500 mb-2">Этот файл используют все скиллы для подстройки под твой стиль</p>
+            <textarea id="contextEditor" rows="12"
+                class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-600 resize-y font-mono text-sm"
+                placeholder="## Голос и тон&#10;- ...&#10;&#10;## Контент-пиллары&#10;1. ...">{{ context }}</textarea>
+            <button onclick="saveContext()" class="mt-2 px-4 py-2 bg-accent hover:bg-accent-dark text-white text-sm font-medium rounded-lg transition-colors">
+                Сохранить контекст
+            </button>
+            <span id="contextSaved" class="ml-2 text-sm text-green-400 hidden">✓ Сохранено</span>
+        </div>
+
+        <!-- System Prompt -->
+        <div>
+            <h3 class="text-lg font-semibold text-white mb-3">Системный промпт</h3>
+            <p class="text-sm text-gray-500 mb-2">Дополнительные инструкции, добавляемые к каждому запросу</p>
+            <textarea id="promptEditor" rows="8"
+                class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-600 resize-y font-mono text-sm"
+                placeholder="Пиши на русском языке. Голос — циничный...">{{ system_prompt }}</textarea>
+            <button onclick="saveSystemPrompt()" class="mt-2 px-4 py-2 bg-accent hover:bg-accent-dark text-white text-sm font-medium rounded-lg transition-colors">
+                Сохранить промпт
+            </button>
+            <span id="promptSaved" class="ml-2 text-sm text-green-400 hidden">✓ Сохранено</span>
+        </div>
+
+        <!-- Style Samples -->
+        <div>
+            <h3 class="text-lg font-semibold text-white mb-3">Примеры стиля</h3>
+            <p class="text-sm text-gray-500 mb-2">Загрузи файлы с примерами своих постов (.txt или .md)</p>
+            <form id="uploadForm" class="flex items-center gap-3">
+                <input type="file" name="file" accept=".txt,.md" required
+                    class="text-sm text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-dark-600 file:text-gray-300 hover:file:bg-dark-500">
+                <button type="submit" class="px-4 py-2 bg-dark-600 hover:bg-dark-500 text-white text-sm font-medium rounded-lg transition-colors">
+                    Загрузить
+                </button>
+            </form>
+            <div id="samplesList" class="mt-3 space-y-2"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function saveContext() {
+    const content = document.getElementById('contextEditor').value;
+    const resp = await fetch('/api/save-context', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'content=' + encodeURIComponent(content),
+    });
+    const json = await resp.json();
+    if (json.ok) flashSaved('contextSaved');
+}
+
+async function saveSystemPrompt() {
+    const content = document.getElementById('promptEditor').value;
+    const resp = await fetch('/api/save-system-prompt', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'content=' + encodeURIComponent(content),
+    });
+    const json = await resp.json();
+    if (json.ok) flashSaved('promptSaved');
+}
+
+function flashSaved(id) {
+    const el = document.getElementById(id);
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 2000);
+}
+
+document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = new FormData(e.target);
+    const resp = await fetch('/api/upload-style-sample', { method: 'POST', body: data });
+    const json = await resp.json();
+    if (json.ok) { loadSamples(); e.target.reset(); }
+});
+
+async function loadSamples() {
+    const resp = await fetch('/api/style-samples');
+    const json = await resp.json();
+    const container = document.getElementById('samplesList');
+    container.innerHTML = '';
+    if (json.files.length === 0) {
+        container.innerHTML = '<p class="text-sm text-gray-600">Пока нет примеров</p>';
+        return;
+    }
+    json.files.forEach(f => {
+        container.innerHTML += `
+            <div class="p-3 bg-dark-700 rounded-lg border border-gray-700">
+                <div class="text-sm font-medium text-white">${f.name}</div>
+                <div class="text-xs text-gray-500 mt-1 truncate">${f.content.substring(0, 100)}...</div>
+            </div>`;
+    });
+}
+loadSamples();
+</script>
+{% endblock %}

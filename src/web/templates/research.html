@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}SMM Agent — Поиск тем{% endblock %}
+{% block content %}
+<div class="fade-in">
+    <h2 class="text-2xl font-bold text-white mb-6">🔍 Поиск виральных тем</h2>
+
+    <form id="researchForm" class="space-y-5">
+        <div>
+            <label class="block text-sm font-medium text-gray-400 mb-1.5">Тема поиска</label>
+            <input name="topic" type="text" required
+                class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-600"
+                placeholder="тру-крайм, новости кино, тренды...">
+        </div>
+        <button type="submit" class="px-6 py-2.5 bg-accent hover:bg-accent-dark text-white font-medium rounded-lg transition-colors">
+            Найти темы
+        </button>
+    </form>
+
+    <div id="result" class="mt-6 hidden space-y-4"></div>
+    <div id="loading" class="mt-6 hidden flex items-center gap-3 text-gray-400">
+        <div class="loader"></div><span>Ищу виральные темы...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('researchForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = new FormData(e.target);
+    showLoading(true);
+    try {
+        const resp = await fetch('/api/research', { method: 'POST', body: data });
+        const json = await resp.json();
+        const container = document.getElementById('result');
+        container.innerHTML = '';
+        if (json.topics && json.topics.length) {
+            json.topics.forEach((t, i) => {
+                const fmtBadge = { post: '📝', carousel: '🎠', thread: '🧵' };
+                container.innerHTML += `
+                    <div class="p-5 bg-dark-700 rounded-xl border border-gray-700 fade-in">
+                        <div class="flex items-start justify-between gap-4">
+                            <h3 class="font-semibold text-white">${i+1}. ${t.title || '—'}</h3>
+                            <span class="text-xl shrink-0">${fmtBadge[t.best_format] || '📝'} ${t.best_format || ''}</span>
+                        </div>
+                        <p class="text-sm text-gray-400 mt-2">${t.viral_reason || ''}</p>
+                        <div class="mt-3 p-3 bg-dark-900/50 rounded-lg border border-gray-800">
+                            <span class="text-xs text-gray-500">Пример хука:</span>
+                            <p class="text-gray-200 mt-1">"${t.hook_example || '—'}"</p>
+                        </div>
+                        ${t.source ? `<p class="text-xs text-gray-600 mt-2">Источник: ${t.source}</p>` : ''}
+                    </div>`;
+            });
+        } else {
+            container.innerHTML = '<p class="text-gray-400">Ничего не найдено</p>';
+        }
+        container.classList.remove('hidden');
+    } catch (err) {
+        document.getElementById('result').innerHTML = '<p class="text-red-400">Ошибка: ' + err.message + '</p>';
+        document.getElementById('result').classList.remove('hidden');
+    }
+    showLoading(false);
+});
+</script>
+{% endblock %}

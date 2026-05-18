@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}SMM Agent — Переработка{% endblock %}
+{% block content %}
+<div class="fade-in">
+    <h2 class="text-2xl font-bold text-white mb-6">♻️ Переработка контента</h2>
+
+    <form id="repurposeForm" class="space-y-5">
+        <div>
+            <label class="block text-sm font-medium text-gray-400 mb-1.5">Исходный контент</label>
+            <textarea name="content" rows="6" required
+                class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-600 resize-none"
+                placeholder="Вставь пост, статью или любой текст..."></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1.5">Платформы</label>
+                <input name="platforms" type="text"
+                    class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-600"
+                    placeholder="telegram,instagram,threads">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1.5">Форматы</label>
+                <input name="formats" type="text"
+                    class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-600"
+                    placeholder="post,carousel,thread">
+            </div>
+        </div>
+
+        <button type="submit" class="px-6 py-2.5 bg-accent hover:bg-accent-dark text-white font-medium rounded-lg transition-colors">
+            Переработать
+        </button>
+    </form>
+
+    <div id="result" class="mt-6 hidden">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-lg font-semibold text-white">Результат</h3>
+            <button onclick="copyResult()" class="text-sm text-gray-400 hover:text-white transition-colors">📋 Копировать</button>
+        </div>
+        <div id="resultText" class="result-card p-5 bg-dark-700 rounded-xl border border-gray-700 text-gray-200 leading-relaxed"></div>
+    </div>
+    <div id="loading" class="mt-6 hidden flex items-center gap-3 text-gray-400">
+        <div class="loader"></div><span>Перерабатываю контент...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('repurposeForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = new FormData(e.target);
+    showLoading(true);
+    try {
+        const resp = await fetch('/api/repurpose', { method: 'POST', body: data });
+        const json = await resp.json();
+        document.getElementById('resultText').textContent = json.result;
+        document.getElementById('result').classList.remove('hidden');
+    } catch (err) {
+        document.getElementById('resultText').textContent = 'Ошибка: ' + err.message;
+        document.getElementById('result').classList.remove('hidden');
+    }
+    showLoading(false);
+});
+</script>
+{% endblock %}

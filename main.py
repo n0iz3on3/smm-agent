@@ -240,6 +240,11 @@ def main():
     p_context.add_argument("--show", action="store_true", help="Show current context")
     p_context.add_argument("--edit", action="store_true", help="Open context in editor")
 
+    # web
+    p_web = sub.add_parser("web", help="Launch web UI")
+    p_web.add_argument("--host", default="0.0.0.0", help="Host (default: 0.0.0.0)")
+    p_web.add_argument("--port", type=int, default=8000, help="Port (default: 8000)")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -253,6 +258,11 @@ def main():
         print("Скопируй config.yaml.example и заполни.")
         sys.exit(1)
 
+    def cmd_web(args, config: dict):
+        """Launch web UI."""
+        from src.web.app import run
+        run(host=args.host, port=args.port)
+
     commands = {
         "research": cmd_research,
         "post": cmd_post,
@@ -260,6 +270,7 @@ def main():
         "carousel": cmd_carousel,
         "repurpose": cmd_repurpose,
         "context": cmd_context,
+        "web": cmd_web,
     }
 
     cmd_fn = commands.get(args.command)

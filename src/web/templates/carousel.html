@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}SMM Agent — Карусель{% endblock %}
+{% block content %}
+<div class="fade-in">
+    <h2 class="text-2xl font-bold text-white mb-6">🎠 Создание карусели</h2>
+
+    <form id="carouselForm" class="space-y-5">
+        <div>
+            <label class="block text-sm font-medium text-gray-400 mb-1.5">Тема</label>
+            <textarea name="topic" rows="3" required
+                class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-600 resize-none"
+                placeholder="О чём карусель..."></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1.5">Платформа</label>
+                <select name="platform" class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white">
+                    <option value="instagram">Instagram</option>
+                    <option value="telegram">Telegram</option>
+                    <option value="threads">Threads</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1.5">Слайдов</label>
+                <input name="slide_count" type="number" value="10" min="3" max="20"
+                    class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1.5">Формат</label>
+                <select name="format_type" class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white">
+                    <option value="listicle">Listicle</option>
+                    <option value="framework">Framework</option>
+                    <option value="before_after">Before/After</option>
+                    <option value="data_story">Data Story</option>
+                    <option value="case_study">Case Study</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1.5">Дизайн</label>
+                <select name="design_style" class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white">
+                    <option value="">Без картинок</option>
+                    <option value="dark_modern">Dark Modern</option>
+                    <option value="light_clean">Light Clean</option>
+                    <option value="warm_gradient">Warm Gradient</option>
+                    <option value="dark_red">Dark Red</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="submit" class="px-6 py-2.5 bg-accent hover:bg-accent-dark text-white font-medium rounded-lg transition-colors">
+            Создать карусель
+        </button>
+    </form>
+
+    <div id="result" class="mt-6 hidden">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-lg font-semibold text-white">Результат</h3>
+            <button onclick="copyResult()" class="text-sm text-gray-400 hover:text-white transition-colors">📋 Копировать</button>
+        </div>
+        <div id="carouselTitle" class="text-white font-semibold mb-3"></div>
+        <div id="slidesContainer" class="space-y-3"></div>
+        <div id="imagesContainer" class="mt-4 hidden">
+            <h4 class="text-sm font-medium text-gray-400 mb-2">Сгенерированные слайды:</h4>
+            <div id="imagesGrid" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
+        </div>
+    </div>
+    <div id="loading" class="mt-6 hidden flex items-center gap-3 text-gray-400">
+        <div class="loader"></div><span>Создаю карусель...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('carouselForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = new FormData(e.target);
+    const generateImages = data.get('design_style') !== '';
+    data.set('generate_images', generateImages);
+    showLoading(true);
+    try {
+        const resp = await fetch('/api/carousel', { method: 'POST', body: data });
+        const json = await resp.json();
+        const carousel = json.carousel;
+        const titleEl = document.getElementById('carouselTitle');
+        const container = document.getElementById('slidesContainer');
+        titleEl.textContent = carousel.title || '';
+        container.innerHTML = '';
+
+        if (carousel.slides && carousel.slides.length) {
+            carousel.slides.forEach(s => {
+                const colors = {
+                    cover: 'border-indigo-500 bg-indigo-500/5',
+                    context: 'border-blue-500 bg-blue-500/5',
+                    cta: 'border-green-500 bg-green-500/5',
+                    body: 'border-gray-700 bg-dark-700',
+                };
+                const cls = colors[s.type] || colors.body;
+                container.innerHTML += `
+                    <div class="p-4 rounded-xl border ${cls}">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-xs font-mono bg-dark-600 px-2 py-0.5 rounded">${s.slide}/${carousel.slides.length}</span>
+                            <span class="text-xs text-gray-500 uppercase">${s.type}</span>
+                        </div>
+                        <div class="font-semibold text-white mb-1">${s.header || ''}</div>
+                        <div class="text-sm text-gray-300">${s.body || ''}</div>
+                    </div>`;
+            });
+        } else {
+            container.innerHTML = `<pre class="text-gray-300 whitespace-pre-wrap">${carousel.raw || 'Ошибка генерации'}</pre>`;
+        }
+
+        // Images
+        if (json.images && json.images.length) {
+            const imgContainer = document.getElementById('imagesContainer');
+            const imgGrid = document.getElementById('imagesGrid');
+            imgContainer.classList.remove('hidden');
+            imgGrid.innerHTML = '';
+            json.images.forEach(src => {
+                imgGrid.innerHTML += `<img src="/static/${src}" class="rounded-lg border border-gray-700 w-full" alt="Slide">`;
+            });
+        }
+
+        document.getElementById('result').classList.remove('hidden');
+    } catch (err) {
+        document.getElementById('carouselTitle').textContent = 'Ошибка: ' + err.message;
+        document.getElementById('result').classList.remove('hidden');
+    }
+    showLoading(false);
+});
+</script>
+{% endblock %}

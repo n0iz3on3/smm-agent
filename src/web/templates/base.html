@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SMM Agent{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { 900: '#0a0a0f', 800: '#12121a', 700: '#1a1a2e', 600: '#242438' },
+                        accent: { DEFAULT: '#6366f1', light: '#818cf8', dark: '#4f46e5' },
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .loader { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #6366f1; border-radius: 50%; width: 24px; height: 24px; animation: spin 0.8s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        textarea:focus, input:focus, select:focus { outline: none; box-shadow: 0 0 0 2px rgba(99,102,241,0.5); }
+        .result-card { white-space: pre-wrap; word-break: break-word; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #12121a; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    </style>
+    <link rel="stylesheet" href="/static/css/main.css">
+    {% block head %}{% endblock %}
+</head>
+<body class="bg-dark-900 text-gray-200 h-full">
+    <div class="flex h-full">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-dark-800 border-r border-gray-800 flex flex-col shrink-0">
+            <div class="p-5 border-b border-gray-800">
+                <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                    <span class="text-accent">🖤</span> SMM Agent
+                </h1>
+                <p class="text-xs text-gray-500 mt-1">AI-генерация контента</p>
+            </div>
+            <nav class="flex-1 p-3 space-y-1">
+                {% set nav_items = [
+                    ('/', '🏠', 'Дашборд'),
+                    ('/post', '📝', 'Пост'),
+                    ('/hooks', '🪝', 'Хуки'),
+                    ('/carousel', '🎠', 'Карусель'),
+                    ('/research', '🔍', 'Поиск тем'),
+                    ('/repurpose', '♻️', 'Переработка'),
+                    ('/settings', '⚙️', 'Настройки'),
+                ] %}
+                {% for href, icon, label in nav_items %}
+                <a href="{{ href }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors
+                    {% if request.url.path == href %}bg-accent/10 text-accent{% else %}text-gray-400 hover:text-white hover:bg-dark-700{% endif %}">
+                    <span>{{ icon }}</span>
+                    <span>{{ label }}</span>
+                </a>
+                {% endfor %}
+            </nav>
+            <div class="p-4 border-t border-gray-800">
+                <div class="text-xs text-gray-600">
+                    Модель: <span class="text-gray-400">{{ model or '—' }}</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main content -->
+        <main class="flex-1 overflow-y-auto">
+            <div class="max-w-4xl mx-auto p-8">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

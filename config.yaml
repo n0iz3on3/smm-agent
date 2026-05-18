@@ -1,0 +1,44 @@
+# SMM Agent Configuration
+
+llm:
+  provider: openai  # openai | anthropic | custom
+  api_key: ${OPENAI_API_KEY}
+  model: gpt-5.4-nano
+  base_url: https://api.openai.com/v1
+
+brave:
+  api_key: ${BRAVE_API_KEY}
+
+platforms:
+  - telegram
+  - instagram
+  - threads
+
+# Тема контента (можно менять через CLI)
+topic: "тру-крайм, новости кино"
+
+# Расписание (для будущей автопостинга)
+schedule:
+  enabled: false
+  # cron: "0 10,18 * * *"
+
+# Пути
+paths:
+  skills_dir: "./skills"
+  style_samples: "./data/style_samples"
+  output: "./data/output"
+  context_file: "./data/social-media-context.md"
+  system_prompt: "./data/system_prompt.md"
+
+# Настройки генерации
+generation:
+  temperature: 0.8
+  max_tokens: 2000
+  hooks_per_topic: 5
+  carousel_slides: 10
+
+# Настройки поиска
+research:
+  max_topics: 5
+  language: ru
+  region: ru

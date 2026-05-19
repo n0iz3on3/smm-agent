@@ -4,7 +4,7 @@ llm:
   provider: openai  # openai | anthropic | custom
   api_key: ${OPENAI_API_KEY}
   model: gpt-5.4-nano
-  base_url: https://api.openai.com/v1
+  base_url: https://api.proxyapi.ru/openai/v1
 
 brave:
   api_key: ${BRAVE_API_KEY}
@@ -29,6 +29,7 @@ paths:
   output: "./data/output"
   context_file: "./data/social-media-context.md"
   system_prompt: "./data/system_prompt.md"
+  generations_log: "./data/generations.jsonl"
 
 # Настройки генерации
 generation:

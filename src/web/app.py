@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -36,6 +37,41 @@ _templates_dir = str(Path(__file__).parent / "templates")
 templates = Jinja2Templates(directory=_templates_dir)
 
 MODEL_NAME = config.get("llm", {}).get("model", "")
+GENERATIONS_LOG = Path(config.get("paths", {}).get("generations_log", "./data/generations.jsonl"))
+
+
+def _save_generation(entry: dict):
+    """Append a generation record to JSONL log."""
+    GENERATIONS_LOG.parent.mkdir(parents=True, exist_ok=True)
+    entry["id"] = _next_id()
+    entry["created_at"] = datetime.now(timezone.utc).isoformat()
+    with open(GENERATIONS_LOG, "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    return entry["id"]
+
+
+def _load_generations() -> list[dict]:
+    """Load all generations from JSONL log."""
+    if not GENERATIONS_LOG.exists():
+        return []
+    entries = []
+    with open(GENERATIONS_LOG, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                try:
+                    entries.append(json.loads(line))
+                except json.JSONDecodeError:
+                    pass
+    return entries
+
+
+def _next_id() -> int:
+    """Get next sequential ID."""
+    entries = _load_generations()
+    if not entries:
+        return 1
+    return max(e.get("id", 0) for e in entries) + 1
 
 
 def _render(request, template: str, **kwargs):
@@ -109,7 +145,15 @@ async def api_post(
         angle=angle, style_samples=h["style"], context=h["context"],
         system_prompt=h["system_prompt"],
     )
-    return {"result": result}
+    gen_id = _save_generation({
+        "type": "post",
+        "topic": topic,
+        "platform": platform,
+        "content_type": content_type,
+        "angle": angle,
+        "result": result,
+    })
+    return {"result": result, "id": gen_id}
 
 
 @app.post("/api/hooks")
@@ -209,6 +253,35 @@ async def api_list_style_samples():
             if f.is_file() and f.suffix in (".txt", ".md"):
                 files.append({"name": f.name, "content": f.read_text(encoding="utf-8")[:2000]})
     return {"files": files}
+
+
+@app.get("/api/generations")
+async def api_list_generations():
+    """List all saved generations, newest first."""
+    entries = _load_generations()
+    entries.reverse()
+    return {"generations": entries}
+
+
+@app.delete("/api/generations/{gen_id}")
+async def api_delete_generation(gen_id: int):
+    """Delete a specific generation by ID."""
+    entries = _load_generations()
+    new_entries = [e for e in entries if e.get("id") != gen_id]
+    if len(new_entries) == len(entries):
+        return JSONResponse({"ok": False, "error": "not found"}, status_code=404)
+    with open(GENERATIONS_LOG, "w", encoding="utf-8") as f:
+        for e in new_entries:
+            f.write(json.dumps(e, ensure_ascii=False) + "\n")
+    return {"ok": True}
+
+
+@app.delete("/api/generations")
+async def api_delete_all_generations():
+    """Delete all generations."""
+    if GENERATIONS_LOG.exists():
+        GENERATIONS_LOG.write_text("")
+    return {"ok": True}
 
 
 def run(host: str = "0.0.0.0", port: int = 8000):

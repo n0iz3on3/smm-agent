@@ -18,7 +18,7 @@
                 <select name="platform" class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white">
                     <option value="telegram">Telegram</option>
                     <option value="instagram">Instagram</option>
-                    <option value="threads">Threads</option>
+                    <option value="threads" selected>Threads</option>
                 </select>
             </div>
             <div>
@@ -57,11 +57,90 @@
         <div class="loader"></div>
         <span>Генерирую пост...</span>
     </div>
+
+    <!-- История генераций -->
+    <div id="history" class="mt-10">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-white">📜 История генераций</h3>
+            <button onclick="clearAll()" class="text-xs text-red-400 hover:text-red-300 transition-colors">Удалить всё</button>
+        </div>
+        <div id="historyList" class="space-y-3"></div>
+        <p id="historyEmpty" class="text-sm text-gray-600 hidden">Пока ничего не сгенерировали</p>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+async function loadHistory() {
+    try {
+        const resp = await fetch('/api/generations');
+        const data = await resp.json();
+        const list = document.getElementById('historyList');
+        const empty = document.getElementById('historyEmpty');
+        list.innerHTML = '';
+        if (!data.generations || data.generations.length === 0) {
+            empty.classList.remove('hidden');
+            return;
+        }
+        empty.classList.add('hidden');
+        data.generations.forEach(g => {
+            const date = new Date(g.created_at).toLocaleString('ru-RU');
+            const preview = g.result ? g.result.substring(0, 150).replace(/\n/g, ' ') + '...' : '';
+            const el = document.createElement('div');
+            el.className = 'bg-dark-700 rounded-lg border border-gray-700 p-4 group';
+            el.innerHTML = `
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-xs text-gray-500">#${g.id}</span>
+                            <span class="text-xs text-gray-500">${date}</span>
+                            <span class="text-xs px-2 py-0.5 bg-dark-600 rounded text-gray-400">${g.platform}</span>
+                        </div>
+                        <p class="text-sm text-gray-300 font-medium truncate">${g.topic}</p>
+                        <p class="text-xs text-gray-500 mt-1 truncate">${preview}</p>
+                    </div>
+                    <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        <button onclick="showGen(${g.id})" class="text-xs px-2 py-1 text-gray-400 hover:text-white" title="Показать">👁</button>
+                        <button onclick="deleteGen(${g.id})" class="text-xs px-2 py-1 text-red-400 hover:text-red-300" title="Удалить">🗑</button>
+                    </div>
+                </div>`;
+            list.appendChild(el);
+        });
+    } catch (err) {
+        console.error('History load error:', err);
+    }
+}
+
+async function showGen(id) {
+    try {
+        const resp = await fetch('/api/generations');
+        const data = await resp.json();
+        const g = data.generations.find(e => e.id === id);
+        if (g) {
+            document.getElementById('resultText').textContent = g.result;
+            document.getElementById('result').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    } catch (err) {}
+}
+
+async function deleteGen(id) {
+    if (!confirm('Удалить эту генерацию?')) return;
+    try {
+        await fetch(`/api/generations/${id}`, { method: 'DELETE' });
+        loadHistory();
+    } catch (err) {}
+}
+
+async function clearAll() {
+    if (!confirm('Удалить всю историю генераций?')) return;
+    try {
+        await fetch('/api/generations', { method: 'DELETE' });
+        loadHistory();
+    } catch (err) {}
+}
+
 document.getElementById('postForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.target;
@@ -72,11 +151,15 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
         const json = await resp.json();
         document.getElementById('resultText').textContent = json.result;
         document.getElementById('result').classList.remove('hidden');
+        loadHistory();
     } catch (err) {
         document.getElementById('resultText').textContent = 'Ошибка: ' + err.message;
         document.getElementById('result').classList.remove('hidden');
     }
     showLoading(false);
 });
+
+// Init
+loadHistory();
 </script>
 {% endblock %}

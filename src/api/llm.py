@@ -58,7 +58,7 @@ class LLMClient:
             "model": model or self.model,
             "messages": messages,
             "temperature": temperature if temperature is not None else self.temperature,
-            "max_tokens": max_tokens or self.max_tokens,
+            "max_completion_tokens": max_tokens or self.max_tokens,
         }
         resp = self.client.post(url, json=payload, headers=headers)
         resp.raise_for_status()

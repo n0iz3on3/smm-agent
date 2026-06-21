@@ -2,132 +2,167 @@
 {% block title %}SMM Agent — Карусель{% endblock %}
 {% block content %}
 <div class="fade-in">
-    <h2 class="text-2xl font-bold text-white mb-6">🎠 Создание карусели</h2>
+    <h2 class="text-2xl font-bold text-white mb-2">🎞 Кино-карусель</h2>
+    <p class="text-sm text-gray-500 mb-6">Вставь текст со слайдами и нажми «Генерировать».</p>
 
-    <form id="carouselForm" class="space-y-5">
+    <form id="carouselForm" class="space-y-4">
         <div>
-            <label class="block text-sm font-medium text-gray-400 mb-1.5">Тема</label>
-            <textarea name="topic" rows="3" required
-                class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-600 resize-none"
-                placeholder="О чём карусель..."></textarea>
-        </div>
+            <label class="block text-sm font-medium text-gray-400 mb-1.5">Текст слайдов</label>
+            <textarea id="filmsInput" rows="14" required
+                class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-600 resize-y text-sm leading-relaxed"
+                placeholder="Слайд 1
+Название (English Title, 2025)
+Описание фильма...
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-400 mb-1.5">Платформа</label>
-                <select name="platform" class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white">
-                    <option value="instagram">Instagram</option>
-                    <option value="telegram">Telegram</option>
-                    <option value="threads">Threads</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-400 mb-1.5">Слайдов</label>
-                <input name="slide_count" type="number" value="10" min="3" max="20"
-                    class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-400 mb-1.5">Формат</label>
-                <select name="format_type" class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white">
-                    <option value="listicle">Listicle</option>
-                    <option value="framework">Framework</option>
-                    <option value="before_after">Before/After</option>
-                    <option value="data_story">Data Story</option>
-                    <option value="case_study">Case Study</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-400 mb-1.5">Дизайн</label>
-                <select name="design_style" class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white">
-                    <option value="">Без картинок</option>
-                    <option value="dark_modern">Dark Modern</option>
-                    <option value="light_clean">Light Clean</option>
-                    <option value="warm_gradient">Warm Gradient</option>
-                    <option value="dark_red">Dark Red</option>
-                </select>
-            </div>
+Слайд 2
+Название (English Title, 2025)
+Описание фильма..."></textarea>
         </div>
-
-        <button type="submit" class="px-6 py-2.5 bg-accent hover:bg-accent-dark text-white font-medium rounded-lg transition-colors">
-            Создать карусель
+        <button type="submit" id="genBtn" class="px-6 py-2.5 bg-accent hover:bg-accent-dark text-white font-medium rounded-lg transition-colors">
+            🖼 Генерировать слайды
         </button>
     </form>
 
-    <div id="result" class="mt-6 hidden">
-        <div class="flex items-center justify-between mb-3">
-            <h3 class="text-lg font-semibold text-white">Результат</h3>
-            <button onclick="copyResult()" class="text-sm text-gray-400 hover:text-white transition-colors">📋 Копировать</button>
-        </div>
-        <div id="carouselTitle" class="text-white font-semibold mb-3"></div>
-        <div id="slidesContainer" class="space-y-3"></div>
-        <div id="imagesContainer" class="mt-4 hidden">
-            <h4 class="text-sm font-medium text-gray-400 mb-2">Сгенерированные слайды:</h4>
-            <div id="imagesGrid" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
-        </div>
-    </div>
     <div id="loading" class="mt-6 hidden flex items-center gap-3 text-gray-400">
-        <div class="loader"></div><span>Создаю карусель...</span>
+        <div class="loader"></div><span id="loadTxt">Генерирую слайды...</span>
+    </div>
+
+    <div id="result" class="mt-8 hidden">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-lg font-semibold text-white">✅ Готово</h3>
+            <a id="downloadAllBtn" href="#" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors hidden">⬇ Скачать все (ZIP)</a>
+        </div>
+        <div id="resultImgs" class="grid grid-cols-2 md:grid-cols-5 gap-3"></div>
+    </div>
+
+    <div id="historySection" class="mt-10 hidden">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-white">📚 История</h3>
+            <button onclick="loadCarousels()" class="text-sm text-gray-400 hover:text-white">🔄</button>
+        </div>
+        <div id="historyList" class="space-y-3"></div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+function parseFilms(text) {
+    const films = [];
+    // Split by "Слайд N" markers
+    const parts = text.split(/Слайд\s+\d+/i);
+
+    for (const part of parts) {
+        const lines = part.trim().split('\n').map(l => l.trim()).filter(l => l);
+        if (lines.length === 0) continue;
+
+        // First non-empty line: "Название (English Title, YEAR)"
+        const firstLine = lines[0];
+
+        // Extract: everything before last ( ) is title_ru, inside last () is title_en + year
+        // Format: "Обезьяна (The Monkey, 2025)" or "Обезьяна (The Monkey)" or just "Обезьяна"
+        let title = firstLine, titleEn = '', year = null;
+
+        const bracketMatch = firstLine.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+        if (bracketMatch) {
+            title = bracketMatch[1].trim();
+            const inside = bracketMatch[2].trim();
+            // Inside could be "English Title, 2025" or just "English Title"
+            const yearMatch = inside.match(/,\s*(\d{4})\s*$/);
+            if (yearMatch) {
+                titleEn = inside.substring(0, inside.length - yearMatch[0].length).trim();
+                year = parseInt(yearMatch[1]);
+            } else {
+                titleEn = inside;
+                // Try to find year in the english part
+                const ym = titleEn.match(/\b(19|20)\d{2}\b/);
+                if (ym) year = parseInt(ym[0]);
+            }
+        }
+
+        // Rest lines = description
+        const description = lines.slice(1).join(' ').trim();
+
+        if (title && title.length > 1) {
+            films.push({ slide: films.length + 1, title, title_en: titleEn, year, description });
+        }
+        if (films.length >= 5) break;
+    }
+
+    return films;
+}
+
 document.getElementById('carouselForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const data = new FormData(e.target);
-    const generateImages = data.get('design_style') !== '';
-    data.set('generate_images', generateImages);
-    showLoading(true);
-    try {
-        const resp = await fetch('/api/carousel', { method: 'POST', body: data });
-        const json = await resp.json();
-        const carousel = json.carousel;
-        const titleEl = document.getElementById('carouselTitle');
-        const container = document.getElementById('slidesContainer');
-        titleEl.textContent = carousel.title || '';
-        container.innerHTML = '';
+    const text = document.getElementById('filmsInput').value.trim();
+    if (!text) return;
 
-        if (carousel.slides && carousel.slides.length) {
-            carousel.slides.forEach(s => {
-                const colors = {
-                    cover: 'border-indigo-500 bg-indigo-500/5',
-                    context: 'border-blue-500 bg-blue-500/5',
-                    cta: 'border-green-500 bg-green-500/5',
-                    body: 'border-gray-700 bg-dark-700',
-                };
-                const cls = colors[s.type] || colors.body;
-                container.innerHTML += `
-                    <div class="p-4 rounded-xl border ${cls}">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="text-xs font-mono bg-dark-600 px-2 py-0.5 rounded">${s.slide}/${carousel.slides.length}</span>
-                            <span class="text-xs text-gray-500 uppercase">${s.type}</span>
-                        </div>
-                        <div class="font-semibold text-white mb-1">${s.header || ''}</div>
-                        <div class="text-sm text-gray-300">${s.body || ''}</div>
-                    </div>`;
-            });
-        } else {
-            container.innerHTML = `<pre class="text-gray-300 whitespace-pre-wrap">${carousel.raw || 'Ошибка генерации'}</pre>`;
-        }
-
-        // Images
-        if (json.images && json.images.length) {
-            const imgContainer = document.getElementById('imagesContainer');
-            const imgGrid = document.getElementById('imagesGrid');
-            imgContainer.classList.remove('hidden');
-            imgGrid.innerHTML = '';
-            json.images.forEach(src => {
-                imgGrid.innerHTML += `<img src="/static/${src}" class="rounded-lg border border-gray-700 w-full" alt="Slide">`;
-            });
-        }
-
-        document.getElementById('result').classList.remove('hidden');
-    } catch (err) {
-        document.getElementById('carouselTitle').textContent = 'Ошибка: ' + err.message;
-        document.getElementById('result').classList.remove('hidden');
+    const films = parseFilms(text);
+    if (films.length === 0) {
+        alert('Не удалось распознать слайды. Формат:\n\nСлайд 1\nНазвание (English Title, 2025)\nОписание\n\nСлайд 2\n...');
+        return;
     }
-    showLoading(false);
+
+    const btn = document.getElementById('genBtn');
+    btn.disabled = true; btn.textContent = '⏳ Генерирую...';
+    document.getElementById('loading').classList.remove('hidden');
+    document.getElementById('result').classList.add('hidden');
+
+    try {
+        const fd = new FormData();
+        fd.append('carousel_json', JSON.stringify({ slides: films }));
+        fd.append('topic', films.map(f => f.title).join(', '));
+        const resp = await fetch('/api/carousel/render', { method: 'POST', body: fd });
+        if (!resp.ok) throw new Error((await resp.text()).substring(0, 300));
+        const json = await resp.json();
+
+        const box = document.getElementById('resultImgs');
+        box.innerHTML = '';
+        if (json.images && json.images.length) {
+            json.images.forEach(s => {
+                box.innerHTML += `<a href="/output/${s}" target="_blank"><img src="/output/${s}" class="rounded-lg border border-gray-700 w-full hover:border-gray-500" alt="Slide"></a>`;
+            });
+            document.getElementById('result').classList.remove('hidden');
+            // Show download all button
+            const dlBtn = document.getElementById('downloadAllBtn');
+            const ids = json.images.map(s => encodeURIComponent(s)).join(',');
+            dlBtn.href = `/api/carousels/download?files=${ids}`;
+            dlBtn.classList.remove('hidden');
+            loadCarousels();
+        } else {
+            alert('Не удалось найти кадры для фильмов.');
+        }
+    } catch(e) { alert('Ошибка: ' + e.message); }
+
+    document.getElementById('loading').classList.add('hidden');
+    btn.disabled = false;
+    btn.textContent = '🖼 Генерировать слайды';
 });
+
+function esc(t) { if (!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+async function loadCarousels() {
+    try {
+        const r = await fetch('/api/carousels'); const j = await r.json();
+        const s = document.getElementById('historySection'), l = document.getElementById('historyList');
+        if (!j.carousels || !j.carousels.length) { s.classList.add('hidden'); return; }
+        s.classList.remove('hidden'); l.innerHTML = '';
+        j.carousels.forEach(c => {
+            const date = c.created_at ? new Date(c.created_at).toLocaleString('ru-RU') : '—';
+            const slides = c.carousel?.slides || [];
+            const name = slides.map(s => s.title || '?').join(', ') || c.topic || '—';
+            let imgs = '';
+            if (c.images && c.images.length) {
+                imgs = `<div class="mt-3 grid grid-cols-3 md:grid-cols-5 gap-2">${c.images.map(s=>`<a href="/output/${s}" target="_blank"><img src="/output/${s}" class="rounded border border-gray-700 w-full hover:opacity-80" alt="Slide"></a>`).join('')}</div>`;
+            }
+            l.innerHTML += `<div class="bg-dark-700 rounded-xl border border-gray-700 p-4">
+                <div class="flex items-start justify-between"><div class="flex-1"><div class="text-white font-semibold text-sm">${esc(name)}</div><div class="text-xs text-gray-500">${slides.length} слайдов · ${date}</div></div>
+                <div class="flex gap-2 ml-3"><button onclick="document.getElementById('cd-${c.id}').classList.toggle('hidden')" class="text-xs text-gray-400 px-2 py-1 rounded border border-gray-700">👁</button>${c.images && c.images.length ? `<a href="/api/carousels/download?files=${c.images.map(s=>encodeURIComponent(s)).join(',')}" class="text-xs text-green-400 px-2 py-1 rounded border border-green-900 hover:bg-green-900/30">⬇</a>` : ''}<button onclick="if(confirm('Удалить?'))fetch('/api/carousels/${c.id}',{method:'DELETE'}).then(loadCarousels)" class="text-xs text-red-400 px-2 py-1 rounded border border-red-900">🗑</button></div></div>
+                <div id="cd-${c.id}" class="hidden">${imgs}</div></div>`;
+        });
+    } catch(e) {}
+}
+
+loadCarousels();
 </script>
 {% endblock %}

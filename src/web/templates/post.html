@@ -12,35 +12,13 @@
                 placeholder="О чём написать пост..."></textarea>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-400 mb-1.5">Платформа</label>
-                <select name="platform" class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white">
-                    <option value="telegram">Telegram</option>
-                    <option value="instagram">Instagram</option>
-                    <option value="threads" selected>Threads</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-400 mb-1.5">Тип</label>
-                <select name="content_type" class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white">
-                    <option value="storytelling">Storytelling</option>
-                    <option value="educational">Educational</option>
-                    <option value="engagement">Engagement</option>
-                    <option value="promotional">Promotional</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-400 mb-1.5">Угол / CTA</label>
-                <input name="angle" type="text"
-                    class="w-full bg-dark-700 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-600"
-                    placeholder="Необязательно">
+        <div class="flex gap-4 items-end">
+            <div class="flex-1">
+                <button type="submit" class="w-full px-6 py-2.5 bg-accent hover:bg-accent-dark text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2">
+                    Сгенерировать
+                </button>
             </div>
         </div>
-
-        <button type="submit" class="px-6 py-2.5 bg-accent hover:bg-accent-dark text-white font-medium rounded-lg transition-colors flex items-center gap-2">
-            Сгенерировать
-        </button>
     </form>
 
     <div id="result" class="mt-6 hidden">
@@ -146,18 +124,65 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
     const form = e.target;
     const data = new FormData(form);
     showLoading(true);
+    document.getElementById('result').classList.add('hidden');
     try {
         const resp = await fetch('/api/post', { method: 'POST', body: data });
         const json = await resp.json();
-        document.getElementById('resultText').textContent = json.result;
-        document.getElementById('result').classList.remove('hidden');
-        loadHistory();
+        if (json.status === 'queued') {
+            document.getElementById('resultText').textContent = '⏳ Агент работает... Результат появится в истории ниже.';
+            document.getElementById('result').classList.remove('hidden');
+            // Poll for new generation
+            const beforeCount = await getGenerationCount();
+            let attempts = 0;
+            const poll = setInterval(async () => {
+                attempts++;
+                const count = await getGenerationCount();
+                if (count > beforeCount) {
+                    clearInterval(poll);
+                    showLoading(false);
+                    loadHistory();
+                    // Show latest result
+                    const gens = await getGenerations();
+                    if (gens.length > 0) {
+                        document.getElementById('resultText').textContent = gens[0].result;
+                        document.getElementById('result').classList.remove('hidden');
+                    }
+                    return;
+                }
+                if (attempts > 120) { // 4 min timeout
+                    clearInterval(poll);
+                    showLoading(false);
+                    document.getElementById('resultText').textContent = '⏱ Таймаут. Проверьте историю ниже.';
+                    document.getElementById('result').classList.remove('hidden');
+                }
+            }, 2000);
+        } else {
+            document.getElementById('resultText').textContent = json.result || JSON.stringify(json);
+            document.getElementById('result').classList.remove('hidden');
+            showLoading(false);
+        }
     } catch (err) {
         document.getElementById('resultText').textContent = 'Ошибка: ' + err.message;
         document.getElementById('result').classList.remove('hidden');
+        showLoading(false);
     }
-    showLoading(false);
 });
+
+async function getGenerationCount() {
+    try {
+        const resp = await fetch('/api/generations');
+        const data = await resp.json();
+        return data.generations ? data.generations.length : 0;
+    } catch { return 0; }
+}
+
+async function getGenerations() {
+    try {
+        const resp = await fetch('/api/generations');
+        const data = await resp.json();
+        return data.generations || [];
+    } catch { return []; }
+}
 
 // Init
 loadHistory();

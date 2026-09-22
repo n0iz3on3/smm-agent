@@ -169,6 +169,15 @@
       "updated": "2026-09-22"
     },
     {
+      "id": "web-autostart",
+      "title": "Автозапуск веб-сервера при логоне (Windows)",
+      "description": "Task Scheduler запускает scripts/run_web_windows.py через pythonw: сервер на 127.0.0.1:8000, лог в data/output/webserver.log, повторный запуск безопасен (already_running)",
+      "area": "infra",
+      "status": "done",
+      "interfaces": [],
+      "updated": "2026-09-22"
+    },
+    {
       "id": "autoposting-telegram",
       "title": "Автопостинг в Telegram",
       "description": "Публикация постов в канал через Telegram Bot API",

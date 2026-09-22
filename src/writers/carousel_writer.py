@@ -15,6 +15,37 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from src.api.llm import LLMClient, load_skill, load_style_samples, load_context, load_system_prompt
 
 
+def _find_font_file(bold: bool = False) -> Optional[str]:
+    """Find the first available TTF font across Windows / macOS / Linux.
+
+    Returns an absolute path to the font file or None if nothing found.
+    """
+    if bold:
+        candidates = [
+            r"C:\Windows\Fonts\arialbd.ttf",
+            r"C:\Windows\Fonts\segoeuib.ttf",
+            "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+            "/Library/Fonts/Arial Bold.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+            "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
+        ]
+    else:
+        candidates = [
+            r"C:\Windows\Fonts\arial.ttf",
+            r"C:\Windows\Fonts\segoeui.ttf",
+            "/System/Library/Fonts/Supplemental/Arial.ttf",
+            "/Library/Fonts/Arial.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/TTF/DejaVuSans.ttf",
+        ]
+    for p in candidates:
+        if Path(p).exists():
+            return p
+    return None
+
+
 class CarouselWriter:
     """Writes carousel slide content and optionally generates images."""
 
@@ -215,35 +246,17 @@ class CarouselWriter:
         colors = styles.get(design_style, styles["dark_modern"])
         generated = []
 
-        # Try to find a good font
-        font_paths = [
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-            "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
-        ]
-        font_regular_paths = [
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-            "/usr/share/fonts/TTF/DejaVuSans.ttf",
-        ]
+        # Try to find a good font (cross-platform: Windows / macOS / Linux)
+        bold_path = _find_font_file(bold=True)
+        regular_path = _find_font_file(bold=False)
 
-        font = None
-        font_regular = None
-        font_small = None
-        for fp in font_paths:
-            if Path(fp).exists():
-                font = ImageFont.truetype(fp, 48)
-                font_small = ImageFont.truetype(fp, 32)
-                break
-        for fp in font_regular_paths:
-            if Path(fp).exists():
-                font_regular = ImageFont.truetype(fp, 36)
-                break
-
-        if font is None:
+        if bold_path:
+            font = ImageFont.truetype(bold_path, 48)
+            font_small = ImageFont.truetype(bold_path, 32)
+        else:
             font = ImageFont.load_default()
-            font_regular = font
             font_small = font
+        font_regular = ImageFont.truetype(regular_path, 36) if regular_path else font
 
         for slide in slides:
             num = slide.get("slide", 0)
@@ -640,38 +653,19 @@ def _cover_crop(img: Image.Image, target_w: int, target_h: int) -> Image.Image:
 
 def _load_fonts() -> tuple:
     """Load bold, regular, small fonts (fallback to default)."""
-    bold_paths = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-    ]
-    regular_paths = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-    ]
-    font_bold = _pick_font(bold_paths, 48)
-    font_regular = _pick_font(regular_paths, 36)
-    font_small = _pick_font(regular_paths, 28)
+    font_bold = _pick_font(_find_font_file(bold=True), 48)
+    font_regular = _pick_font(_find_font_file(bold=False), 36)
+    font_small = _pick_font(_find_font_file(bold=False), 28)
     return font_bold, font_regular, font_small
 
 
 def _load_font_at_size(bold: bool = True, size: int = 48) -> ImageFont.FreeTypeFont:
     """Load a font at a specific size."""
-    if bold:
-        paths = [
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-        ]
-    else:
-        paths = [
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-        ]
-    return _pick_font(paths, size)
+    return _pick_font(_find_font_file(bold=bold), size)
 
 
-def _pick_font(paths: list[str], size: int) -> ImageFont.FreeTypeFont:
-    """Pick first available font from paths, fallback to default."""
-    for p in paths:
-        if Path(p).exists():
-            return ImageFont.truetype(p, size)
+def _pick_font(path: Optional[str], size: int) -> ImageFont.FreeTypeFont:
+    """Load font from path, fallback to PIL default bitmap font."""
+    if path and Path(path).exists():
+        return ImageFont.truetype(path, size)
     return ImageFont.load_default()

@@ -40,8 +40,10 @@ smm-agent/
 ├── main.py                    # CLI entry point + web server launch
 ├── config.yaml                # Конфигурация (модель, API, пути)
 ├── requirements.txt
-├── AGENT.md                   # Инструкции для OpenClaw-агента
-├── PROJECT.md                 # ← Этот файл. Описание и состояние проекта
+├── AGENTS.md                  # Инструкции для OpenClaw-агента + правила учётных файлов
+├── PROJECT.md                 # ← Описание и состояние проекта
+├── PROGRESS.md                # Журнал прогресса: снимок статуса, вехи, фокус
+├── feature-list.json          # Машиночитаемый реестр фич и статусов
 ├── CHANGELOG.md               # Ежедневник правок
 ├── .env                       # API ключи (OPENAI_API_KEY, BRAVE_API_KEY, GITHUB_TOKEN)
 │

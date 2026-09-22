@@ -1,0 +1,250 @@
+{
+  "$schema": "feature-list/v1",
+  "project": "smm-agent",
+  "updated": "2026-09-22",
+  "legend": {
+    "status": {
+      "done": "работает и проверено",
+      "in_progress": "активно разрабатывается",
+      "planned": "в планах, есть понимание как делать",
+      "idea": "идея без проработки"
+    },
+    "area": {
+      "research": "поиск тем и трендов",
+      "generation": "генерация контента (посты, хуки, карусели)",
+      "rendering": "рендер изображений слайдов",
+      "style": "авторский стиль и профили",
+      "web": "веб-интерфейс и API",
+      "storage": "хранение данных и логов",
+      "posting": "публикация в соцсети",
+      "analytics": "метрики и аналитика",
+      "infra": "инфраструктура, деплой, зависимости"
+    },
+    "interfaces": ["cli", "web", "api"],
+    "priority": ["high", "medium", "low"]
+  },
+  "features": [
+    {
+      "id": "research",
+      "title": "Поиск виральных тем",
+      "description": "Brave Search + LLM-фильтрация, отбор топ-N тем за прогон",
+      "area": "research",
+      "status": "done",
+      "interfaces": ["cli", "web", "api"],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "post-writer",
+      "title": "Генерация постов",
+      "description": "Посты под платформу (Telegram/Instagram/Threads) с учётом стиля автора",
+      "area": "generation",
+      "status": "done",
+      "interfaces": ["cli", "web", "api"],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "hook-writer",
+      "title": "Генерация хуков",
+      "description": "Цепляющие заголовки по 9 паттернам (contrarian, question, story, statistic и др.)",
+      "area": "generation",
+      "status": "done",
+      "interfaces": ["cli", "web", "api"],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "carousel-text",
+      "title": "Текст каруселей",
+      "description": "Структура слайдов cover → body → CTA через LLM",
+      "area": "generation",
+      "status": "done",
+      "interfaces": ["cli", "web", "api"],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "carousel-correction",
+      "title": "Корректировка каруселей",
+      "description": "Правка текста карусели по замечаниям до дорогого рендера",
+      "area": "generation",
+      "status": "done",
+      "interfaces": ["web", "api"],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "carousel-render",
+      "title": "Рендер слайдов каруселей",
+      "description": "PNG 1080×1080: постеры с cover crop, блюр + градиент нижней трети, наложение текста",
+      "area": "rendering",
+      "status": "done",
+      "interfaces": ["cli", "web", "api"],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "carousel-zip-download",
+      "title": "ZIP-скачивание слайдов",
+      "description": "Скачать все слайды карусели одним ZIP; закрыт path traversal",
+      "area": "web",
+      "status": "done",
+      "interfaces": ["web", "api"],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "repurpose",
+      "title": "Переработка контента",
+      "description": "Адаптация готового текста под другие платформы и форматы",
+      "area": "generation",
+      "status": "done",
+      "interfaces": ["cli", "web", "api"],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "style-profiles",
+      "title": "Профили авторского стиля",
+      "description": "Кино и тру-крайм: профили + примеры постов в data/style_samples, подмешиваются в промпты",
+      "area": "style",
+      "status": "done",
+      "interfaces": [],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "context-management",
+      "title": "Управление контекстом и промптами",
+      "description": "Редактирование голоса/тона, системного промпта и примеров стиля из веба",
+      "area": "web",
+      "status": "done",
+      "interfaces": ["web", "api"],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "web-ui",
+      "title": "Веб-интерфейс",
+      "description": "FastAPI + Jinja2 + Tailwind: 7 страниц, 15+ API-эндпоинтов",
+      "area": "web",
+      "status": "done",
+      "interfaces": ["web", "api"],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "cli",
+      "title": "CLI",
+      "description": "Все типы генерации доступны из командной строки (main.py)",
+      "area": "infra",
+      "status": "done",
+      "interfaces": ["cli"],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "generations-history",
+      "title": "История генераций",
+      "description": "JSONL-логи generations/carousels, просмотр и удаление из веба",
+      "area": "storage",
+      "status": "done",
+      "interfaces": ["web", "api"],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "openclaw-queue",
+      "title": "Очередь задач для OpenClaw-агента",
+      "description": "queue.jsonl: веб кладёт задачи, внешний агент забирает и постит результат через API",
+      "area": "infra",
+      "status": "done",
+      "interfaces": ["api"],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "kinopoisk-titles",
+      "title": "Русские названия фильмов",
+      "description": "Автоопределение русских названий через Кинопоиск для каруселей",
+      "area": "rendering",
+      "status": "done",
+      "interfaces": [],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "cross-platform-fonts",
+      "title": "Кроссплатформенные шрифты рендера",
+      "description": "Подбор TTF на Windows/macOS/Linux вместо только Linux-путей (фикс bitmap-шрифта на Windows)",
+      "area": "rendering",
+      "status": "done",
+      "interfaces": [],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "autoposting-telegram",
+      "title": "Автопостинг в Telegram",
+      "description": "Публикация постов в канал через Telegram Bot API",
+      "area": "posting",
+      "status": "planned",
+      "priority": "high",
+      "interfaces": [],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "autoposting-instagram",
+      "title": "Автопостинг в Instagram",
+      "description": "Публикация постов и каруселей через Instagram Graph API",
+      "area": "posting",
+      "status": "planned",
+      "priority": "medium",
+      "interfaces": [],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "scheduled-generation",
+      "title": "Генерация по расписанию",
+      "description": "Cron-запуски генерации и постинга по конфигу schedule",
+      "area": "infra",
+      "status": "planned",
+      "priority": "high",
+      "interfaces": [],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "ab-hook-testing",
+      "title": "A/B тестирование хуков",
+      "description": "Сравнение вариантов хуков на реальных охватах",
+      "area": "analytics",
+      "status": "planned",
+      "priority": "medium",
+      "interfaces": [],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "engagement-analytics",
+      "title": "Аналитика вовлечённости",
+      "description": "Сбор метрик реакций/просмотров по опубликованным постам",
+      "area": "analytics",
+      "status": "planned",
+      "priority": "medium",
+      "interfaces": [],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "web-auth",
+      "title": "Авторизация веб-интерфейса",
+      "description": "Basic auth / токен: сейчас любой посетитель может генерить контент и менять промпты",
+      "area": "infra",
+      "status": "planned",
+      "priority": "high",
+      "interfaces": [],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "ai-covers",
+      "title": "AI-генерация обложек",
+      "description": "Обложки каруселей через DALL-E / Midjourney вместо/вместе с постерами",
+      "area": "rendering",
+      "status": "idea",
+      "interfaces": [],
+      "updated": "2026-09-22"
+    },
+    {
+      "id": "sqlite-storage",
+      "title": "SQLite вместо JSONL",
+      "description": "Переход логов на SQLite: убирает O(n) пересчёт id и гонки при параллельных запросах",
+      "area": "storage",
+      "status": "idea",
+      "interfaces": [],
+      "updated": "2026-09-22"
+    }
+  ]
+}
